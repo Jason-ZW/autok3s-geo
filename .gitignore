@@ -12,4 +12,20 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
+
+# Third-party directories
+.idea/
+.DS_Store
+.vscode/
+
+# Compile the resulting file
+dist/
+bin/
+sha256sum*
+main
+
+## Dapper temporary files
+**/Dockerfile.dapper*
+!**/Dockerfile.dapper
+.vscode/
