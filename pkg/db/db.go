@@ -110,33 +110,6 @@ func (d *DB) QueryByIPIn24Hours(ip string) ([]types.GeoIP, error) {
 	return geoIPs, nil
 }
 
-func (d *DB) QueryByCityIn24Hours(city string) (int, error) {
-	num := 1
-
-	if d.client == nil {
-		return 0, errors.New("failed to query metrics, because client is nil")
-	}
-
-	query := d.client.QueryAPI(ORG)
-
-	result, err := query.Query(d.ctx,
-		fmt.Sprintf(`from(bucket: "%s") |> range(start: %d, stop: now()) |> filter(fn: (r) => r._measurement == "%s" and r.repository == "%s" and r.city == "%s")`,
-			BUCKET, time.Now().Add(-24*time.Hour).UTC().Unix(), MEASUREMENT, REPOSITORY, city))
-	if err != nil {
-		return 0, err
-	}
-
-	for result.Next() {
-		num = num + 1
-	}
-
-	if result.Err() != nil {
-		return 0, result.Err()
-	}
-
-	return num, nil
-}
-
 func (d *DB) Write(geoIP *types.GeoIP) (*types.GeoIP, error) {
 	if d.client == nil {
 		return nil, errors.New("failed to write metrics, because client is nil")
@@ -146,11 +119,6 @@ func (d *DB) Write(geoIP *types.GeoIP) (*types.GeoIP, error) {
 
 	if geoIP.City == "" {
 		geoIP.City = geohash.Encode(geoIP.Latitude, geoIP.Longitude)
-	}
-
-	num, err := d.QueryByCityIn24Hours(geoIP.City)
-	if err != nil {
-		return nil, err
 	}
 
 	if geoIP.City == "" {
@@ -164,10 +132,10 @@ func (d *DB) Write(geoIP *types.GeoIP) (*types.GeoIP, error) {
 		AddTag("city", geoIP.City).
 		AddTag("latitude", fmt.Sprintf("%f", geoIP.Latitude)).
 		AddTag("longitude", fmt.Sprintf("%f", geoIP.Longitude)).
-		AddField("active", num).
+		AddField("active", 1).
 		SetTime(time.Now())
 
-	err = write.WritePoint(d.ctx, point)
+	err := write.WritePoint(d.ctx, point)
 	if err != nil {
 		return nil, err
 	}
