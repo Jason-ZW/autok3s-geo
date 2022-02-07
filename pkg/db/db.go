@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/mmcloughlin/geohash"
 	"os"
 	"strconv"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/Jason-ZW/autok3s-geo/pkg/types"
 
 	"github.com/influxdata/influxdb-client-go/v2"
+	"github.com/mmcloughlin/geohash"
 )
 
 const (
