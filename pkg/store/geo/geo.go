@@ -11,6 +11,7 @@ import (
 	"github.com/rancher/apiserver/pkg/store/empty"
 	"github.com/rancher/apiserver/pkg/types"
 	"github.com/rancher/wrangler/pkg/schemas/validation"
+	"github.com/sirupsen/logrus"
 )
 
 // Store holds provider's API state.
@@ -21,16 +22,19 @@ type Store struct {
 // Create creates geo by IP.
 func (s *Store) Create(apiOp *types.APIRequest, schema *types.APISchema, data types.APIObject) (types.APIObject, error) {
 	if !util.ValidRequest(apiOp.Request) {
+		logrus.Errorf("request is invalid")
 		return types.APIObject{}, apierror.NewAPIError(validation.InvalidReference, "request is invalid")
 	}
 
 	ip, err := util.GetRealIPAddress(apiOp.Request)
 	if err != nil {
+		logrus.Errorf("failed to get RealIPAddress: %e", err)
 		return types.APIObject{}, apierror.NewAPIError(validation.InvalidFormat, err.Error())
 	}
 
 	db, err := db.NewDB(context.Background())
 	if err != nil {
+		logrus.Errorf("failed to dail db: %e", err)
 		return types.APIObject{}, apierror.NewAPIError(validation.ServerError, err.Error())
 	}
 	defer db.Close()
@@ -43,12 +47,14 @@ func (s *Store) Create(apiOp *types.APIRequest, schema *types.APISchema, data ty
 
 	geo, err := FreeGeoXhr(ip)
 	if err != nil {
+		logrus.Errorf("failed to request freeGeo: %e", err)
 		return types.APIObject{}, apierror.NewAPIError(validation.ServerError, err.Error())
 	}
 
 	// write to the db.
 	geo, err = db.Write(geo)
 	if err != nil {
+		logrus.Errorf("failed to write db: %e", err)
 		return types.APIObject{}, apierror.NewAPIError(validation.ServerError, err.Error())
 	}
 
